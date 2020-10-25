@@ -84,7 +84,33 @@ def read_fasta(amplicon_file, minseqlen):
             occ_dict[seq] += 1
      for seq, count in occ_dict.items():
         if count >= mincount:
-            yield [seq, count]              
+            yield [seq, count]        
+            
+def get_chunks(sequence, chunk_size):
+    chunk_num = int(len(sequence) / chunk_size)
+    chunk = []
+    if chunk_num < 4:
+        chunk_num = int(len(sequence) / 4)
+    count = 0
+    for i in range(chunk_num):
+        chunk.append(sequence[count:count+chunk_size])
+        count += chunk_size
+    return chunk
+
+def cut_kmer(sequence, kmer_size):
+    for i in range(len(sequence) - kmer_size + 1):
+        yield sequence[i : i + kmer_size]
+
+def get_unique_kmer(kmer_dict, sequence, id_seq, kmer_size):
+    for kmer in cut_kmer(sequence, kmer_size):
+        if kmer not in kmer_dict:
+            kmer_dict[kmer] = []
+        kmer_dict[kmer].append(id_seq)
+    return kmer_dict            
+
+def search_mates(kmer_dict, sequence, kmer_size):
+    return [i[0] for i in Counter([ids for kmer in cut_kmer(sequence, kmer_size)
+        if kmer in kmer_dict for ids in kmer_dict[kmer]]).most_common(8)]            
 #==============================================================
 # Main program
 #==============================================================
